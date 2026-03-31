@@ -367,29 +367,29 @@ Each inventory item must map to:
 ```ts
 CHECKOUT_MODE = "mock" | "shopify"
 
-# 21. Preorders System
+## 21. Preorders System
 
-## 21.1 Overview
+### 21.1 Overview
 
-The platform must support a dedicated **Preorders system** separate from the Singles storefront.
+The system must support a **Preorders feature** separate from the Singles storefront.
 
-Preorders are not standard browse-and-buy listings. They are **limited-stock, queue-based events** designed to handle high-demand product drops (e.g., sealed product, limited releases).
+Preorders are **limited-stock, queue-based events** used for high-demand product releases.
 
-Unlike Singles, where users can immediately add items to cart, Preorders require users to:
-- join a live queue
+Unlike Singles, users cannot immediately purchase items. Instead, users must:
+- join a queue
 - wait for their turn
 - receive a timed claim window
 - proceed to checkout if eligible
 
-Preorders are designed to provide a fair and controlled purchasing experience while preventing overselling and abuse.
+Preorders are designed to ensure fair access and controlled inventory distribution.
 
 ---
 
-## 21.2 User Experience
+### 21.2 User Experience
 
-### Entry
+#### Entry
 
-Users access Preorders via the main navigation:
+Users access Preorders via:
 
 - Shop
   - Singles
@@ -397,19 +397,19 @@ Users access Preorders via the main navigation:
 
 ---
 
-### Preorders Landing Page
+#### Preorders Landing Page
 
-The Preorders page must display events grouped by status:
+The page must display preorder events grouped by:
 
-- Live Now
+- Live
 - Upcoming
 - Sold Out / Closed
 
-Each preorder card should display:
+Each event must display:
 - title
 - image
-- release/start time
-- stock status
+- start time
+- status
 - CTA:
   - Join Queue (if live)
   - View Details (if upcoming)
@@ -417,229 +417,199 @@ Each preorder card should display:
 
 ---
 
-### Preorder Detail Page
+#### Preorder Detail Page
 
-Each preorder must have a dedicated page showing:
+Each preorder must include:
 
 - product details
 - preorder rules
 - max quantity per user
-- queue instructions
-- preorder status
+- status
 
-If the preorder is live:
-- display **Join Queue** button
+If live:
+- display **Join Queue**
 
 ---
 
-### Queue Experience
+#### Queue Experience
 
 When a user joins a queue:
 
-- a queue modal or persistent panel is displayed
-- the user remains on the preorder page
-- the modal displays:
+- a modal or panel must appear
+- user remains on the same page
+- UI must display:
   - queue position
   - queue status
-  - instructions
-  - optional estimated wait time
 
-Users must keep the preorder page open to maintain their place in queue.
-
-Users may:
-- switch tabs
-- browse elsewhere
-
-But must keep the queue session active in the browser.
+User must keep the page open to remain in queue.
 
 ---
 
-## 21.3 Queue Mechanics
+### 21.3 Queue Mechanics
 
-### Queue Entry Rules
+#### Queue Entry Rules
 
-- users must be logged in to join a queue
-- each user may only have one active queue entry per preorder
-- queue position is assigned based on join timestamp
+- user must be logged in
+- one queue entry per user per preorder
+- queue position assigned by join time
 
 ---
 
-### Queue Advancement
+#### Queue Advancement
 
 - queue progression must be automatic
-- users should not be required to manually confirm their turn
-- backend logic is responsible for:
-  - advancing the queue
-  - handling expired users
-  - promoting the next eligible user
+- user interaction is not required
+- backend must:
+  - advance queue
+  - handle expired users
+  - promote next user
 
 ---
 
-### Presence Requirement
+#### Presence Requirement
 
-Queue participation requires an active session.
-
-- frontend must send periodic heartbeat signals
-- backend tracks user presence
-- if heartbeat is lost beyond a grace period:
-  - user may lose queue eligibility
+- frontend must send heartbeat signals
+- backend tracks active session
+- if session is lost beyond grace period:
+  - user may lose queue position
 
 ---
 
-### Session Recovery
+#### Session Recovery
 
-- if a user refreshes the page and their session is still valid:
-  - queue state should be restored automatically
+- if page is refreshed and session is valid:
+  - queue state must be restored
 
 ---
 
-## 21.4 Claim Flow
+### 21.4 Claim Flow
 
-### Active Claim State
+#### Active Claim State
 
-When a user reaches the front of the queue:
+When user reaches front of queue:
 
-- their state changes from `Waiting` to `Active Claim`
-- the UI must automatically transition into claim mode
-- a modal or overlay must display:
+- status changes to `Active Claim`
+- UI must display:
   - countdown timer
-  - claim instructions
-  - checkout CTA
+  - checkout action
 
-Users should not need to manually accept their turn.
-
----
-
-### Claim Window
-
-- each preorder defines a fixed claim window (e.g., 5 minutes)
-- countdown timer must be visible
-- if the timer expires:
-  - user forfeits their turn
-  - queue advances automatically
+User should not be required to confirm manually.
 
 ---
 
-### Claim Action
+#### Claim Window
 
-When in Active Claim:
-
-- user can proceed to checkout
-- user may select quantity (if allowed)
-- quantity must respect:
-  - preorder stock
-  - max per user
+- each preorder defines a fixed time window (e.g., 5 minutes)
+- timer must be visible
+- if expired:
+  - user loses turn
+  - queue advances
 
 ---
 
-## 21.5 Checkout Integration
+#### Claim Action
 
-Preorders must use the same checkout architecture as Singles.
+User may:
+- proceed to checkout
+- select quantity (if applicable)
 
-### Shared Checkout Model
-
-- application prepares order
-- user is routed to checkout
-- Shopify handles payment (future state)
+Quantity must respect:
+- stock
+- max per user
 
 ---
 
-### Current Implementation (Prototype)
+### 21.5 Checkout Integration
+
+Preorders use the same checkout flow as Singles.
+
+#### Current Implementation
 
 - checkout is mocked
-- system simulates:
-  - successful payment
-  - order creation
+- system simulates payment success and order creation
 - UI must indicate:
-  - “Shopify checkout integration coming soon”
+  - “Shopify integration coming soon”
 
 ---
 
-### Eligibility Validation
+#### Validation Before Checkout
 
-Before allowing checkout, system must verify:
-
-- user is in `Active Claim` state
-- claim timer has not expired
-- preorder stock is still available
+System must verify:
+- user is in `Active Claim`
+- claim window is valid
+- stock is available
 
 If validation fails:
 - block checkout
-- show clear error message
+- show error
 
 ---
 
-## 21.6 Inventory Rules
+### 21.6 Inventory Rules
 
-### Core Rule
+#### Core Rule
 
-Preorder queues do **NOT** reserve inventory.
-
-Inventory is only decremented when checkout is successfully completed.
+Inventory is only decremented on successful checkout.
 
 ---
 
-### Implications
+#### Behavior
 
-- joining queue does not affect stock
-- reaching front of queue does not affect stock
-- entering claim window does not affect stock
-- only successful checkout decrements stock
+- queue does not reserve inventory
+- claim state does not reserve inventory
+- checkout success reduces stock
 
 ---
 
-### Stock Exhaustion During Checkout
+#### Stock Exhaustion
 
-If stock runs out while a user is in checkout:
+If stock runs out during checkout:
 
 - checkout must fail
-- user must see a clear error message
-- queue entry should be updated accordingly
+- show out-of-stock error
 
 ---
 
-## 21.7 Admin Controls
+### 21.7 Admin Controls
 
-Staff/admin must be able to:
+#### Preorder Management
 
-### Preorder Management
-- create preorder events
-- edit event details
-- set total stock
-- set max quantity per user
-- set claim window duration
+- create/edit preorder
+- set stock
+- set max per user
+- set claim window
 
 ---
 
-### Queue Control
-- view queue length
-- view current active user
-- pause queue
-- resume queue
-- manually advance queue (optional override)
-- remove users from queue
+#### Queue Control
+
+- view queue
+- view active user
+- pause/resume queue
+- remove users
 
 ---
 
-### Inventory Control
+#### Inventory Control
+
 - adjust stock
-- mark preorder as sold out
-- close preorder event
+- mark sold out
+- close preorder
 
 ---
 
-### Monitoring
+#### Monitoring
 
-Admin must be able to:
 - track queue progression
-- monitor stock consumption
-- identify oversell situations
+- monitor stock
+- handle oversell
 
 ---
 
-## 21.8 Status Definitions
+### 21.8 Status Definitions
 
-### Preorder Event Status
+#### Preorder Status
+
 - Upcoming
 - Live
 - Sold Out
@@ -649,7 +619,8 @@ Admin must be able to:
 
 ---
 
-### Queue Entry Status
+#### Queue Status
+
 - Waiting
 - Active Claim
 - Checked Out
@@ -660,43 +631,44 @@ Admin must be able to:
 
 ---
 
-## 21.9 Edge Cases
+### 21.9 Edge Cases
 
-### User Leaves Page
+#### User Leaves Page
+
 - heartbeat stops
-- after grace period, queue entry may expire
+- after grace period:
+  - queue entry may expire
 
 ---
 
-### User Refreshes Page
-- if session is still valid:
-  - restore queue state
+#### Page Refresh
+
+- restore queue if session valid
 
 ---
 
-### Multiple Tabs
-- only one active queue entry per user per preorder
-- additional tabs should reuse or restore existing session
+#### Multiple Tabs
+
+- one active queue entry per user
 
 ---
 
-### Stock Runs Out Mid-Queue
-- remaining users transition to:
-  - Sold Out or Unfulfilled
+#### Stock Runs Out
+
+- remaining users marked as sold out
 
 ---
 
-### Oversell Scenario
-- staff must be able to:
-  - adjust stock
-  - cancel affected orders
-  - issue refunds
+#### Oversell
+
+- staff must adjust stock
+- cancel affected orders if needed
 
 ---
 
-## 21.10 Design Principles
+### 21.10 Design Principles
 
-- Preorders must feel like a **live drop experience**
-- user interaction should be minimal and automatic
-- system must prioritize fairness and clarity
-- checkout experience must remain consistent with Singles
+- minimal user interaction
+- automatic progression
+- clear state transitions
+- consistent checkout with Singles
