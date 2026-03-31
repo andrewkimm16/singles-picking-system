@@ -673,3 +673,13 @@ If stock runs out during checkout:
 - automatic progression
 - clear state transitions
 - consistent checkout with Singles
+
+---
+
+### 21.11 Admin CMS Capabilities
+
+The Admin Preorders Dashboard (`/admin/preorders`) supports full CRUD operations on drops, including:
+- Creating entirely new preload drops.
+- A dynamic modal to modify `title`, `description`, `price`, `start_time` (via native `datetime-local` selectors), `total_stock`, `max_per_user`, and the exact `claim_window_minutes`.
+- Real-time controls to force drops into `paused` or `live` states manually.
+- Live metric monitoring showing exactly how many users are in the `WAITING`, `ACTIVE_CLAIM`, and `CHECKED_OUT` states per drop.
