@@ -366,8 +366,7 @@ Each inventory item must map to:
 
 ```ts
 CHECKOUT_MODE = "mock" | "shopify"
-
----
+```
 
 ## 21. Preorders System
 
