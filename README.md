@@ -1,7 +1,7 @@
 # New Kawaii: Singles & Preorders Platform
 **Status:** Functioning prototype, deployed on Vercel | Built for a real local game store in Westchester County, New York
 
-**Live Demo:** [singles-picking-system.vercel.app](https://singles-picking-system.vercel.app)
+**Live Demo:** [singles-picking-system.vercel.app](https://singles-picking-system.vercel.app/login)
 
 > Three demo accounts available. See Usage section below.
 
