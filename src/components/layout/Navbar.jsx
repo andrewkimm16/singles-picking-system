@@ -18,24 +18,18 @@ export default function Navbar({ onCartClick }) {
   return (
     <nav className="navbar" id="main-navbar">
       <div className="navbar-inner">
-        <Link to="/" className="navbar-brand">
-          <Store size={22} />
-          <span>New Kawaii</span>
-          <span style={{
-            fontSize: '0.7rem',
-            fontWeight: 600,
-            color: 'var(--color-text-muted)',
-            marginLeft: '-4px',
-            WebkitTextFillColor: 'var(--color-text-muted)',
-          }}>
-            Singles
-          </span>
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xl)' }}>
+          <Link to="/" className="navbar-brand">
+            <Store size={22} />
+            NK <span>Singles</span>
+          </Link>
+          <ul className="navbar-links">
+            <li><NavLink to="/" className={({ isActive }) => (isActive && window.location.pathname === '/' ? 'active' : '')}>Singles</NavLink></li>
+            <li><NavLink to="/preorders" className={({ isActive }) => (isActive ? 'active' : '')}>Preorders</NavLink></li>
+          </ul>
+        </div>
 
         <ul className="navbar-links">
-          <li>
-            <NavLink to="/" end>Shop</NavLink>
-          </li>
           {isStaff && (
             <>
               <li>

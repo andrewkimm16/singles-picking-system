@@ -110,6 +110,18 @@ export default function AdminDashboard() {
             </div>
           </div>
         </Link>
+
+        <Link to="/admin/preorders" className="card" style={{ textDecoration: 'none', padding: 'var(--spacing-xl)', borderColor: 'var(--color-accent-pink)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+            <TrendingUp size={24} style={{ color: 'var(--color-error)' }} />
+            <div>
+              <h3 style={{ marginBottom: 2 }}>Hyped Drops</h3>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
+                Manage preorder queues and active stock
+              </p>
+            </div>
+          </div>
+        </Link>
       </div>
     </div>
   );

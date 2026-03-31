@@ -122,3 +122,36 @@ export function isSeeded() {
 export function markSeeded() {
   setData('seeded', true);
 }
+
+// ═══════════════════════════════════════
+// PREORDERS & QUEUES
+// ═══════════════════════════════════════
+
+/**
+ * Get all preorder events.
+ */
+export function getPreorders() {
+  return getData('preorders') || null; // Return null if unseeded
+}
+
+/**
+ * Set all preorder events.
+ */
+export function setPreorders(preorders) {
+  setData('preorders', preorders);
+}
+
+/**
+ * Get all queue entries (globally).
+ * In a real app, this would be a DB table queried by preorder_id.
+ */
+export function getQueues() {
+  return getData('queues') || [];
+}
+
+/**
+ * Set all queue entries.
+ */
+export function setQueues(queues) {
+  setData('queues', queues);
+}

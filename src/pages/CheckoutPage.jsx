@@ -1,22 +1,64 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, CreditCard, CheckCircle, Info } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import { useOrders } from '../context/OrderContext.jsx';
 import { useInventory } from '../context/InventoryContext.jsx';
+import { usePreorders } from '../context/PreorderContext.jsx';
+import { useQueue } from '../context/QueueContext.jsx';
 import { formatPrice } from '../utils/formatters.js';
+import { QUEUE_STATUSES } from '../utils/constants.js';
 
 export default function CheckoutPage() {
   const { user } = useAuth();
   const { cart, cartTotal, clearCart } = useCart();
   const { createOrder } = useOrders();
-  const { decrementQuantity } = useInventory();
+  const { decrementQuantity, getItemById } = useInventory();
+  
+  // Preorder specific contexts
+  const [searchParams] = useSearchParams();
+  const preorderId = searchParams.get('preorder');
+  const { getPreorderById, decrementStock } = usePreorders();
+  const { getUserEntry, markCheckedOut } = useQueue();
+
   const navigate = useNavigate();
 
   const [phone, setPhone] = useState('');
   const [confirmedOrder, setConfirmedOrder] = useState(null);
   const [error, setError] = useState('');
+
+  // Setup data sources based on checkout mode (Single vs Preorder)
+  const isPreorderMode = !!preorderId;
+  const preorderEvent = isPreorderMode ? getPreorderById(preorderId) : null;
+  const queueEntry = isPreorderMode ? getUserEntry(preorderId) : null;
+
+  const checkoutItems = isPreorderMode && preorderEvent ? [{
+    inventory_id: `preorder-${preorderEvent.id}`,
+    card_name: preorderEvent.title,
+    set_code: 'PREORDER',
+    condition: 'FNM',
+    finish: 'Standard',
+    quantity: 1, // hardcoded for prototype simplicity, could be dynamic
+    price: preorderEvent.price
+  }] : cart.items;
+
+  const checkoutTotal = isPreorderMode && preorderEvent ? preorderEvent.price : cartTotal;
+
+  // Enforce cart / claim rules
+  useEffect(() => {
+    if (confirmedOrder) return;
+    
+    if (!isPreorderMode && cart.items.length === 0) {
+      navigate('/');
+    }
+    
+    if (isPreorderMode) {
+      if (!preorderEvent || !queueEntry || queueEntry.status !== QUEUE_STATUSES.ACTIVE_CLAIM) {
+        navigate(`/preorders/${preorderId}`);
+      }
+    }
+  }, [cart.items.length, isPreorderMode, preorderEvent, queueEntry, preorderId, navigate, confirmedOrder]);
 
   if (confirmedOrder) {
     return (
@@ -27,59 +69,61 @@ export default function CheckoutPage() {
           </div>
           <h1>Order Placed!</h1>
           <p style={{ color: 'var(--color-text-secondary)', maxWidth: 400, margin: '0 auto' }}>
-            Thanks, {confirmedOrder.customer_name}! Your order is being prepared.
-            You'll hear from us when it's ready for pickup.
+            Thanks, {confirmedOrder.customer_name}! Your order is confirmed.
+            You'll hear from us with further updates.
           </p>
           <div className="confirmation-order-id">
             {confirmedOrder.order_id}
           </div>
           <div style={{ display: 'flex', gap: 'var(--spacing-md)', justifyContent: 'center', marginTop: 'var(--spacing-lg)' }}>
-            <Link to="/" className="btn btn-primary">Continue Shopping</Link>
+            <Link to={isPreorderMode ? "/preorders" : "/"} className="btn btn-primary">
+              Continue Shopping
+            </Link>
           </div>
         </div>
       </div>
     );
   }
 
-  useEffect(() => {
-    if (cart.items.length === 0 && !confirmedOrder) {
-      navigate('/');
-    }
-  }, [cart.items.length, navigate, confirmedOrder]);
-
-  if (cart.items.length === 0 && !confirmedOrder) {
-    return null;
-  }
+  if (!isPreorderMode && cart.items.length === 0) return null;
+  if (isPreorderMode && (!preorderEvent || !queueEntry)) return null;
 
   const handlePlaceOrder = () => {
     setError('');
     
-    // Check inventory first
-    for (const item of cart.items) {
-      const invItem = getItemById(item.inventory_id);
-      if (!invItem || invItem.quantity_available < item.quantity) {
-        setError(`Sorry, ${item.card_name} only has ${invItem?.quantity_available || 0} left in stock. Please update your cart.`);
+    if (isPreorderMode) {
+      // PREORDER CHECKOUT
+      if (queueEntry.status !== QUEUE_STATUSES.ACTIVE_CLAIM || Date.now() > queueEntry.claim_expires_at) {
+        setError('Your claim window has expired. Please rejoin the queue.');
         return;
       }
+      if (preorderEvent.total_stock < 1) {
+        setError('Sorry, this preorder event just sold out.');
+        return;
+      }
+      
+      const order = createOrder(user.userId, user.name, user.email, phone || null, checkoutItems);
+      decrementStock(preorderEvent.id, 1);
+      markCheckedOut(preorderEvent.id);
+      setConfirmedOrder(order);
+
+    } else {
+      // SINGLES CHECKOUT
+      for (const item of cart.items) {
+        const invItem = getItemById(item.inventory_id);
+        if (!invItem || invItem.quantity_available < item.quantity) {
+          setError(`Sorry, ${item.card_name} only has ${invItem?.quantity_available || 0} left in stock. Please update your cart.`);
+          return;
+        }
+      }
+
+      const order = createOrder(user.userId, user.name, user.email, phone || null, checkoutItems);
+      cart.items.forEach((item) => {
+        decrementQuantity(item.inventory_id, item.quantity);
+      });
+      clearCart();
+      setConfirmedOrder(order);
     }
-
-    // Create internal order
-    const order = createOrder(
-      user.userId,
-      user.name,
-      user.email,
-      phone || null,
-      cart.items
-    );
-
-    // Decrement inventory
-    cart.items.forEach((item) => {
-      decrementQuantity(item.inventory_id, item.quantity);
-    });
-
-    // Clear cart and show confirmation
-    clearCart();
-    setConfirmedOrder(order);
   };
 
   return (
@@ -93,16 +137,21 @@ export default function CheckoutPage() {
           >
             <ArrowLeft size={16} /> Back
           </button>
-          <h1>Checkout</h1>
+          <h1>Checkout {isPreorderMode ? '(Drop Claim)' : ''}</h1>
         </div>
 
-        {/* Mock Payment Notice */}
-        <div className="checkout-mock-notice">
+        {isPreorderMode && (
+          <div className="checkout-mock-notice" style={{ background: 'var(--color-success-bg)', color: 'var(--color-success)', borderColor: 'var(--color-success)' }}>
+            <Info size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} />
+            Your claim is active! Complete checkout before the timer expires.
+          </div>
+        )}
+
+        <div className="checkout-mock-notice" style={{ marginTop: isPreorderMode ? 'var(--spacing-md)' : 0 }}>
           <Info size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} />
           Payment integration coming soon (Shopify). Orders are simulated as paid for now.
         </div>
 
-        {/* Customer Info */}
         <div className="checkout-section">
           <h3>Your Information</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
@@ -128,21 +177,28 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* Order Summary */}
         <div className="checkout-section">
           <h3>Order Summary</h3>
           <div className="checkout-items">
-            {cart.items.map((item) => (
+            {checkoutItems.map((item) => (
               <div className="checkout-item" key={item.inventory_id}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 'var(--font-size-sm)' }}>
                     {item.card_name}
                   </div>
-                  <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
-                    {item.set_code} · {item.condition}
-                    {item.finish === 'foil' && ' · ✦ Foil'}
-                    {' · '}Qty: {item.quantity}
-                  </div>
+                  {!isPreorderMode && (
+                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                      {item.set_code} · {item.condition}
+                      {item.finish === 'foil' && ' · ✦ Foil'}
+                      {' · '}Qty: {item.quantity}
+                    </div>
+                  )}
+                  {isPreorderMode && (
+                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                      Preorder Drop Edition
+                      {' · '}Qty: {item.quantity}
+                    </div>
+                  )}
                 </div>
                 <div style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
                   {formatPrice(item.price * item.quantity)}
@@ -152,7 +208,7 @@ export default function CheckoutPage() {
           </div>
           <div className="checkout-total">
             <span>Total</span>
-            <span>{formatPrice(cartTotal)}</span>
+            <span>{formatPrice(checkoutTotal)}</span>
           </div>
         </div>
 

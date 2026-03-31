@@ -28,6 +28,29 @@ export const ORDER_STATUSES = {
   PARTIAL_REFUND_REQUIRED: 'PARTIAL_REFUND_REQUIRED',
 };
 
+// ═══════════════════════════════════════
+// PREORDERS & QUEUES
+// ═══════════════════════════════════════
+
+export const PREORDER_STATUSES = {
+  UPCOMING: 'upcoming',
+  LIVE: 'live',
+  SOLD_OUT: 'sold_out',
+  CLOSED: 'closed',
+  PAUSED: 'paused',
+  CANCELLED: 'cancelled',
+};
+
+export const QUEUE_STATUSES = {
+  WAITING: 'WAITING',
+  ACTIVE_CLAIM: 'ACTIVE_CLAIM',
+  CHECKED_OUT: 'CHECKED_OUT',
+  EXPIRED: 'EXPIRED',
+  FAILED: 'FAILED',
+  SOLD_OUT: 'SOLD_OUT',
+  REMOVED: 'REMOVED',
+};
+
 // Pick item statuses
 export const PICK_STATUSES = {
   PENDING: 'pending',

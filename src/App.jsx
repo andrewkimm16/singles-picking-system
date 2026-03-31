@@ -16,6 +16,14 @@ import AdminInventory from './pages/AdminInventory.jsx';
 import AdminOrders from './pages/AdminOrders.jsx';
 import PickingPage from './pages/PickingPage.jsx';
 
+// Preorder pages (to be created)
+import PreordersPage from './pages/PreordersPage.jsx';
+import PreorderDetailPage from './pages/PreorderDetailPage.jsx';
+import AdminPreorders from './pages/AdminPreorders.jsx';
+
+import { PreorderProvider } from './context/PreorderContext.jsx';
+import { QueueProvider } from './context/QueueContext.jsx';
+
 function AppLayout({ children }) {
   const [cartOpen, setCartOpen] = useState(false);
 
@@ -34,8 +42,10 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <InventoryProvider>
-          <CartProvider>
-            <OrderProvider>
+          <PreorderProvider>
+            <QueueProvider>
+              <CartProvider>
+                <OrderProvider>
               <Routes>
                 {/* Public route */}
                 <Route path="/login" element={<LoginPage />} />
@@ -49,6 +59,18 @@ export default function App() {
                 <Route path="/checkout" element={
                   <AuthGate>
                     <AppLayout><CheckoutPage /></AppLayout>
+                  </AuthGate>
+                } />
+
+                {/* Preorder routes */}
+                <Route path="/preorders" element={
+                  <AuthGate>
+                    <AppLayout><PreordersPage /></AppLayout>
+                  </AuthGate>
+                } />
+                <Route path="/preorders/:id" element={
+                  <AuthGate>
+                    <AppLayout><PreorderDetailPage /></AppLayout>
                   </AuthGate>
                 } />
 
@@ -68,6 +90,11 @@ export default function App() {
                     <AppLayout><AdminOrders /></AppLayout>
                   </AuthGate>
                 } />
+                <Route path="/admin/preorders" element={
+                  <AuthGate requireStaff>
+                    <AppLayout><AdminPreorders /></AppLayout>
+                  </AuthGate>
+                } />
 
                 {/* Picking route */}
                 <Route path="/picking" element={
@@ -79,8 +106,10 @@ export default function App() {
                 {/* Fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
-            </OrderProvider>
-          </CartProvider>
+                </OrderProvider>
+              </CartProvider>
+            </QueueProvider>
+          </PreorderProvider>
         </InventoryProvider>
       </AuthProvider>
     </BrowserRouter>
