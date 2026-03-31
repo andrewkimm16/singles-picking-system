@@ -34,8 +34,8 @@ export default function LoginPage() {
         <div style={{ marginBottom: 'var(--spacing-lg)' }}>
           <Store size={32} style={{ color: 'var(--color-accent-pink)', marginBottom: 'var(--spacing-sm)' }} />
         </div>
-        <h1><span>New Kawaii</span> Singles</h1>
-        <p>Sign in to browse and shop TCG singles</p>
+        <h1><span>New Kawaii</span> Vault</h1>
+        <p>Sign in to access TCG Singles and Exclusive Drops</p>
 
         {/* Demo Accounts */}
         <div className="login-demo-accounts">

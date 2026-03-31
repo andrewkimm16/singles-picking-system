@@ -21,7 +21,7 @@ export default function Navbar({ onCartClick }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xl)' }}>
           <Link to="/" className="navbar-brand">
             <Store size={22} />
-            NK <span>Shop</span>
+            NK <span>Vault</span>
           </Link>
           <ul className="navbar-links">
             <li><NavLink to="/" className={({ isActive }) => (isActive && window.location.pathname === '/' ? 'active' : '')}>Singles</NavLink></li>
